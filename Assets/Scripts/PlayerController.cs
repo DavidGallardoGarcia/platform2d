@@ -55,8 +55,17 @@ public class PlayerController : MonoBehaviour
             Jump();
         }
 
-        if(onTheFloor){
-            animator.SetBool("fall", false);
+        float velocity;
+            if(rb.velocity.y > 0)//si tiene velocidad vertical positiva esta saltando
+                velocity = 1;
+            else
+                velocity = -1;
+
+        if(!onTheFloor){//si no esta tocando el suelo(jump or fall)
+            animator.SetFloat("verticalSpeed", velocity);
+        }else{
+            if(velocity == -1)
+                EndJump();
         }
     }
 
@@ -65,12 +74,7 @@ public class PlayerController : MonoBehaviour
             rb.velocity = new Vector2(direction.x * movementSpeed, rb.velocity.y);//añade velocidad de movimiento a la direccion horizontal y mantiene la direccion vertical
 
             if(direction != Vector2.zero){//si no esta quieto(!x0y0)
-                if(!onTheFloor){//si no esta en el suelo esta cayendo
-                    animator.SetBool("fall", true);
-                    animator.SetBool("jump", false);
-                }else{
-                    animator.SetBool("walk", true);
-                }
+                animator.SetBool("walk", true);
                 
                 if(direction.x < 0 && transform.localScale.x > 0){//si el jugador se esta desplazando para la izquierda(x < 0) y en la escala indica que esta mirando a la derecha(localScale.x > 0)
                     transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);//cambiamos la escala de x a valor negativo
@@ -84,8 +88,7 @@ public class PlayerController : MonoBehaviour
     }
 
     private void Jump(){
-        // rb.velocity = new Vector2(rb.velocity.x, 0);
-        rb.velocity += Vector2.up * jumpForce;
+        rb.velocity += Vector2.up * jumpForce;//incrementa la velocidad del rb sumando (actual Y * jumpForce), no se incrementa nada a X
     }
 
     private void ImproveJump(){//INVESTIGAR
@@ -103,6 +106,5 @@ public class PlayerController : MonoBehaviour
 
     public void EndJump(){
         animator.SetBool("jump", false);
-        animator.SetBool("fall", true);
     }
 }
