@@ -13,8 +13,14 @@ public class PlayerController : MonoBehaviour
     public float movementSpeed = 10;
     public float jumpForce = 7;
 
+    [Header("Collisions")]
+    public LayerMask layerFloor;
+    public Vector2 floor;
+    public float radioCollider;
+
     [Header("Booleans")]
     public bool canMove = true;
+    public bool onTheFloor = true;
 
     private void Awake() {
         rb = GetComponent<Rigidbody2D>();
@@ -30,6 +36,7 @@ public class PlayerController : MonoBehaviour
     void Update()
     {
         Movement();
+        RestrictJump();
     }
 
     private void Movement(){
@@ -41,7 +48,7 @@ public class PlayerController : MonoBehaviour
         Walk();
 
         ImproveJump();
-        if(Input.GetKeyDown(KeyCode.Space)){
+        if(Input.GetKeyDown(KeyCode.Space) && onTheFloor){
             Jump();
         }
     }
@@ -69,5 +76,9 @@ public class PlayerController : MonoBehaviour
         }else if(rb.velocity.y > 0 && !Input.GetKey(KeyCode.Space)){//no esta saltando y la velocidad es mayor que 0
             rb.velocity += Vector2.up * Physics2D.gravity.y * (2.0f - 1) * Time.deltaTime;
         }
+    }
+
+    private void RestrictJump(){
+        onTheFloor = Physics2D.OverlapCircle((Vector2)transform.position + floor, radioCollider, layerFloor);
     }
 }

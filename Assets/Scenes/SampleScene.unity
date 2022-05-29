@@ -723,7 +723,7 @@ GameObject:
   - component: {fileID: 747598103}
   - component: {fileID: 747598102}
   - component: {fileID: 747598101}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Tilemap
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3621,6 +3621,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   movementSpeed: 10
   jumpForce: 7
+  layerFloor:
+    serializedVersion: 2
+    m_Bits: 128
+  floor: {x: 0, y: -0.75}
+  radioCollider: 0.1
+  canMove: 1
+  onTheFloor: 1
 --- !u!70 &1313911239
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -3871,7 +3878,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1759803721}
   - component: {fileID: 1759803720}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Grid
   m_TagString: Untagged
   m_Icon: {fileID: 0}
