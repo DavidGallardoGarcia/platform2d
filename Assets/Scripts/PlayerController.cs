@@ -8,6 +8,7 @@ public class PlayerController : MonoBehaviour
     [Header("Components")]
 	private Rigidbody2D rb;
     private Vector2 direction;
+    private Animator animator;
 
     [Header("Stats")]
     public float movementSpeed = 10;
@@ -24,6 +25,7 @@ public class PlayerController : MonoBehaviour
 
     private void Awake() {
         rb = GetComponent<Rigidbody2D>();
+        animator = GetComponent<Animator>();
     }
 
     // Start is called before the first frame update
@@ -49,7 +51,12 @@ public class PlayerController : MonoBehaviour
 
         ImproveJump();
         if(Input.GetKeyDown(KeyCode.Space) && onTheFloor){
+            animator.SetBool("jump", true);
             Jump();
+        }
+
+        if(onTheFloor){
+            animator.SetBool("fall", false);
         }
     }
 
@@ -57,10 +64,21 @@ public class PlayerController : MonoBehaviour
         if(canMove){
             rb.velocity = new Vector2(direction.x * movementSpeed, rb.velocity.y);//añade velocidad de movimiento a la direccion horizontal y mantiene la direccion vertical
 
-            if(direction.x < 0 && transform.localScale.x > 0){//si el jugador se esta desplazando para la izquierda(x < 0) y en la escala indica que esta mirando a la derecha(localScale.x > 0)
-                transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);//cambiamos la escala de x a valor negativo
-            }else if(direction.x > 0 && transform.localScale.x < 0){
-                transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);//necesitamos cambiar la escala de x a su valor absoluto
+            if(direction != Vector2.zero){//si no esta quieto(!x0y0)
+                if(!onTheFloor){//si no esta en el suelo esta cayendo
+                    animator.SetBool("fall", true);
+                    animator.SetBool("jump", false);
+                }else{
+                    animator.SetBool("walk", true);
+                }
+                
+                if(direction.x < 0 && transform.localScale.x > 0){//si el jugador se esta desplazando para la izquierda(x < 0) y en la escala indica que esta mirando a la derecha(localScale.x > 0)
+                    transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);//cambiamos la escala de x a valor negativo
+                }else if(direction.x > 0 && transform.localScale.x < 0){
+                    transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);//necesitamos cambiar la escala de x a su valor absoluto
+                }
+            }else{//si esta quieto animacion walk false
+                animator.SetBool("walk", false);
             }
         }
     }
@@ -81,5 +99,10 @@ public class PlayerController : MonoBehaviour
     private void RestrictJump(){
         //crearemos un collider2d al que le pasaremos(posicion central del player + posicion del suelo, radio de la hitbox, layer sobre la que actuar)
         onTheFloor = Physics2D.OverlapCircle((Vector2)transform.position + floor, radioCollider, layerFloor);
+    }
+
+    public void EndJump(){
+        animator.SetBool("jump", false);
+        animator.SetBool("fall", true);
     }
 }
