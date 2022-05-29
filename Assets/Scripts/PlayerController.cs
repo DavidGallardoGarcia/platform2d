@@ -5,15 +5,16 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
 
-    #region COMPONENTS
+    [Header("Components")]
 	private Rigidbody2D rb;
-	#endregion
+    private Vector2 direction;
 
-    #region STATE PARAMETERS
+    [Header("Stats")]
     public float movementSpeed = 10;
     public float jumpForce = 7;
-    private Vector2 direction;
-    #endregion
+
+    [Header("Booleans")]
+    public bool canMove = true;
 
     private void Awake() {
         rb = GetComponent<Rigidbody2D>();
@@ -46,7 +47,15 @@ public class PlayerController : MonoBehaviour
     }
 
     private void Walk(){
-        rb.velocity = new Vector2(direction.x * movementSpeed, rb.velocity.y);
+        if(canMove){
+            rb.velocity = new Vector2(direction.x * movementSpeed, rb.velocity.y);//añade velocidad de movimiento a la direccion horizontal y mantiene la direccion vertical
+
+            if(direction.x < 0 && transform.localScale.x > 0){//si el jugador se esta desplazando para la izquierda(x < 0) y en la escala indica que esta mirando a la derecha(localScale.x > 0)
+                transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);//cambiamos la escala de x a valor negativo
+            }else if(direction.x > 0 && transform.localScale.x < 0){
+                transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);//necesitamos cambiar la escala de x a su valor absoluto
+            }
+        }
     }
 
     private void Jump(){
