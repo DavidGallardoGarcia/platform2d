@@ -66,19 +66,20 @@ public class PlayerController : MonoBehaviour
     }
 
     private void Jump(){
-        rb.velocity = new Vector2(rb.velocity.x, 0);
+        // rb.velocity = new Vector2(rb.velocity.x, 0);
         rb.velocity += Vector2.up * jumpForce;
     }
 
-    private void ImproveJump(){
-        if(rb.velocity.y < 0){//si estoy cayendo
-            rb.velocity += Vector2.up * Physics2D.gravity.y * (2.5f - 1) * Time.deltaTime;
-        }else if(rb.velocity.y > 0 && !Input.GetKey(KeyCode.Space)){//no esta saltando y la velocidad es mayor que 0
-            rb.velocity += Vector2.up * Physics2D.gravity.y * (2.0f - 1) * Time.deltaTime;
+    private void ImproveJump(){//INVESTIGAR
+        if(rb.velocity.y < 0){
+            rb.velocity += Vector2.up * Physics2D.gravity.y * (2.5f) * Time.deltaTime;//velocidad de caida
+        }else if(rb.velocity.y > 0 && !Input.GetKey(KeyCode.Space)){//si esta manteniendo el salto
+            rb.velocity += Vector2.up * Physics2D.gravity.y * (2.0f) * Time.deltaTime;//altura del salto sin mantener
         }
     }
 
     private void RestrictJump(){
+        //crearemos un collider2d al que le pasaremos(posicion central del player + posicion del suelo, radio de la hitbox, layer sobre la que actuar)
         onTheFloor = Physics2D.OverlapCircle((Vector2)transform.position + floor, radioCollider, layerFloor);
     }
 }
