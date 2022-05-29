@@ -4,6 +4,19 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+
+    #region COMPONENTS
+	private Rigidbody2D rb;
+	#endregion
+
+    #region STATE PARAMETERS
+    public float movementSpeed = 10f;
+    #endregion
+
+    private void Awake() {
+        rb = GetComponent<Rigidbody2D>();
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -13,6 +26,19 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        Movement();
+    }
+
+    private void Movement(){
+        float x = Input.GetAxis("Horizontal");
+        float y = Input.GetAxis("Vertical");
+
+        Vector2 direction = new Vector2(x, y);
+
+        Walk(direction);
+    }
+
+    private void Walk(Vector2 direction){
+        rb.velocity = new Vector2(direction.x * movementSpeed, rb.velocity.y);
     }
 }
