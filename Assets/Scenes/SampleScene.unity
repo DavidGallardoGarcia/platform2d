@@ -3620,6 +3620,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   movementSpeed: 10
+  jumpForce: 7
 --- !u!70 &1313911239
 CapsuleCollider2D:
   m_ObjectHideFlags: 0

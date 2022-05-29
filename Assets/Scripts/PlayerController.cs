@@ -10,7 +10,9 @@ public class PlayerController : MonoBehaviour
 	#endregion
 
     #region STATE PARAMETERS
-    public float movementSpeed = 10f;
+    public float movementSpeed = 10;
+    public float jumpForce = 7;
+    private Vector2 direction;
     #endregion
 
     private void Awake() {
@@ -33,12 +35,30 @@ public class PlayerController : MonoBehaviour
         float x = Input.GetAxis("Horizontal");
         float y = Input.GetAxis("Vertical");
 
-        Vector2 direction = new Vector2(x, y);
+        direction = new Vector2(x, y);
 
-        Walk(direction);
+        Walk();
+
+        ImproveJump();
+        if(Input.GetKeyDown(KeyCode.Space)){
+            Jump();
+        }
     }
 
-    private void Walk(Vector2 direction){
+    private void Walk(){
         rb.velocity = new Vector2(direction.x * movementSpeed, rb.velocity.y);
+    }
+
+    private void Jump(){
+        rb.velocity = new Vector2(rb.velocity.x, 0);
+        rb.velocity += Vector2.up * jumpForce;
+    }
+
+    private void ImproveJump(){
+        if(rb.velocity.y < 0){//si estoy cayendo
+            rb.velocity += Vector2.up * Physics2D.gravity.y * (2.5f - 1) * Time.deltaTime;
+        }else if(rb.velocity.y > 0 && !Input.GetKey(KeyCode.Space)){//no esta saltando y la velocidad es mayor que 0
+            rb.velocity += Vector2.up * Physics2D.gravity.y * (2.0f - 1) * Time.deltaTime;
+        }
     }
 }
