@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Cinemachine;
 
 public class PlayerController : MonoBehaviour
 {
@@ -9,6 +10,7 @@ public class PlayerController : MonoBehaviour
 	private Rigidbody2D rb;
     private Vector2 direction;
     private Animator animator;
+    private CinemachineVirtualCamera cm;
 
     [Header("Stats")]
     public float movementSpeed = 10;
@@ -26,10 +28,12 @@ public class PlayerController : MonoBehaviour
     public bool canDash;
     public bool isDash;
     public bool touchFloor;
+    public bool isShake;
 
     private void Awake() {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
+        cm = GameObject.FindGameObjectWithTag("VirtualCamera").GetComponent<CinemachineVirtualCamera>();
     }
 
     // Start is called before the first frame update
@@ -133,6 +137,7 @@ public class PlayerController : MonoBehaviour
         animator.SetBool("dash", true);
         Vector3 playerPosition = Camera.main.WorldToViewportPoint(transform.position);
         Camera.main.GetComponent<RippleEffect>().Emit(playerPosition);//obtenemos la posicion del jugador con respecto con respecto la camara
+        StartCoroutine(ShakeCamera());
 
         canDash = true;
         rb.velocity = Vector2.zero;//transforma la velocidad a 0
@@ -167,5 +172,25 @@ public class PlayerController : MonoBehaviour
         canDash = false;
         isDash = false;
         animator.SetBool("jump", false);
+    }
+
+    private IEnumerator ShakeCamera(){
+        isShake = true;
+
+        CinemachineBasicMultiChannelPerlin cinemachineBasicMultiChannelPerlin = cm.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>();
+        cinemachineBasicMultiChannelPerlin.m_AmplitudeGain = 5;
+        yield return new WaitForSeconds(0.3f);
+        cinemachineBasicMultiChannelPerlin.m_AmplitudeGain = 0;
+        isShake = false;
+    }
+
+    private IEnumerator ShakeCamera(float time){
+        isShake = true;
+
+        CinemachineBasicMultiChannelPerlin cinemachineBasicMultiChannelPerlin = cm.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>();
+        cinemachineBasicMultiChannelPerlin.m_AmplitudeGain = 5;
+        yield return new WaitForSeconds(time);
+        cinemachineBasicMultiChannelPerlin.m_AmplitudeGain = 0;
+        isShake = false;
     }
 }
