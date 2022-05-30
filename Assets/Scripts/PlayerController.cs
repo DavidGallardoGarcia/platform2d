@@ -13,6 +13,7 @@ public class PlayerController : MonoBehaviour
     [Header("Stats")]
     public float movementSpeed = 10;
     public float jumpForce = 7;
+    public float dashVelocity = 20;
 
     [Header("Collisions")]
     public LayerMask layerFloor;
@@ -22,6 +23,9 @@ public class PlayerController : MonoBehaviour
     [Header("Booleans")]
     public bool canMove = true;
     public bool onTheFloor = true;
+    public bool canDash;
+    public bool isDash;
+    public bool touchFloor;
 
     private void Awake() {
         rb = GetComponent<Rigidbody2D>();
@@ -42,8 +46,11 @@ public class PlayerController : MonoBehaviour
     }
 
     private void Movement(){
-        float x = Input.GetAxis("Horizontal");
+        float x = Input.GetAxis("Horizontal");//GetAxis puede devolver valores con DECIMALES comprendidos entre -1 y 1
         float y = Input.GetAxis("Vertical");
+
+        float xRaw = Input.GetAxisRaw("Horizontal");//GetAxisRaw solo puede devolver -1, 0 y 1
+        float yRaw = Input.GetAxisRaw("Vertical");
 
         direction = new Vector2(x, y);
 
@@ -53,6 +60,20 @@ public class PlayerController : MonoBehaviour
         if(Input.GetKeyDown(KeyCode.Space) && onTheFloor){
             animator.SetBool("jump", true);
             Jump();
+        }
+
+        if(Input.GetKeyDown(KeyCode.X) && !isDash){
+            if(xRaw != 0 || yRaw != 0)//izquierda, derecha, arriba y abajo
+                Dash(xRaw, yRaw);
+        }
+
+        if(onTheFloor && !touchFloor){
+            ValidateTouchFloor();
+            touchFloor = true;
+        }
+
+        if(!onTheFloor && touchFloor){
+            touchFloor = true;
         }
 
         float velocity;
@@ -70,7 +91,7 @@ public class PlayerController : MonoBehaviour
     }
 
     private void Walk(){
-        if(canMove){
+        if(canMove && !isDash){
             rb.velocity = new Vector2(direction.x * movementSpeed, rb.velocity.y);//añade velocidad de movimiento a la direccion horizontal y mantiene la direccion vertical
 
             if(direction != Vector2.zero){//si no esta quieto(!x0y0)
@@ -105,6 +126,46 @@ public class PlayerController : MonoBehaviour
     }
 
     public void EndJump(){
+        animator.SetBool("jump", false);
+    }
+
+    private void Dash(float x, float y){
+        animator.SetBool("dash", true);
+        Vector3 playerPosition = Camera.main.WorldToViewportPoint(transform.position);
+        Camera.main.GetComponent<RippleEffect>().Emit(playerPosition);//obtenemos la posicion del jugador con respecto con respecto la camara
+
+        canDash = true;
+        rb.velocity = Vector2.zero;//transforma la velocidad a 0
+        rb.velocity += new Vector2(x, y).normalized * dashVelocity;
+        StartCoroutine(prepareDash());
+    }
+
+    private IEnumerator prepareDash(){
+        StartCoroutine(dashInFloor());
+
+        rb.gravityScale = 0;//para que no afecte la gravedad al jugar
+        isDash = true;
+
+        yield return new WaitForSeconds(0.3f);//en estos segundos la gravedad no afectara al jugador
+
+        rb.gravityScale = 1;//reasignamos la gravedad al jugador
+        isDash = false;
+        endDash();
+    }
+
+    private IEnumerator dashInFloor(){
+        yield return new WaitForSeconds(0.15f);
+        if(onTheFloor)
+            isDash = false;
+    }
+
+    public void endDash(){
+        animator.SetBool("dash", false);
+    }
+
+    private void ValidateTouchFloor(){
+        canDash = false;
+        isDash = false;
         animator.SetBool("jump", false);
     }
 }
