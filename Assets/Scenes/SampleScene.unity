@@ -4844,17 +4844,25 @@ MonoBehaviour:
   movementSpeed: 10
   jumpForce: 7
   dashVelocity: 20
+  slideVelocity: 1.5
   layerFloor:
     serializedVersion: 2
     m_Bits: 128
   floor: {x: 0, y: -0.75}
+  touchRightWall: {x: 0.6, y: 0}
+  touchLeftWall: {x: -0.6, y: 0}
   radioCollider: 0.1
   canMove: 1
-  onTheFloor: 1
+  onTheFloor: 0
   canDash: 0
   isDash: 0
   touchFloor: 0
   isShake: 0
+  inWall: 0
+  rightWall: 0
+  leftWall: 0
+  grab: 0
+  wallJump: 0
 --- !u!70 &1313911239
 CapsuleCollider2D:
   m_ObjectHideFlags: 0

@@ -16,10 +16,11 @@ public class PlayerController : MonoBehaviour
     public float movementSpeed = 10;
     public float jumpForce = 7;
     public float dashVelocity = 20;
+    public float slideVelocity;
 
     [Header("Collisions")]
     public LayerMask layerFloor;
-    public Vector2 floor;
+    public Vector2 floor, touchRightWall, touchLeftWall;
     public float radioCollider;
 
     [Header("Booleans")]
@@ -29,6 +30,11 @@ public class PlayerController : MonoBehaviour
     public bool isDash;
     public bool touchFloor;
     public bool isShake;
+    public bool inWall;
+    public bool rightWall;
+    public bool leftWall;
+    public bool grab;
+    public bool wallJump;
 
     private void Awake() {
         rb = GetComponent<Rigidbody2D>();
@@ -60,10 +66,58 @@ public class PlayerController : MonoBehaviour
 
         Walk();
 
+        if(onTheFloor && !isDash){//si no se queda pillado al caer de un muro
+            wallJump = false;
+        }
+        grab = inWall && Input.GetKey(KeyCode.K);
+
+        if(inWall){
+            animator.SetBool("climb", true);
+            if(rb.velocity == Vector2.zero){
+                animator.SetFloat("velocity", 0);
+            }else{
+                animator.SetFloat("velocity", 1);
+            }
+        }else{
+            animator.SetBool("climb", false);
+            animator.SetFloat("velocity", 0);
+        }
+
+        if(grab && !isDash){
+            //quitamos gravedad al jugador cuando se esta agarrando
+            rb.gravityScale = 0;
+            if(x > 0.1f || y < -0.1f)//si se mueve hacia la derecha o izquierda
+                rb.velocity = new Vector2(rb.velocity.x, 0);
+
+            float velocityModify = y > 0 ? 0.5f : 1;
+            rb.velocity = new Vector2(rb.velocity.x, y * (movementSpeed * velocityModify));//escalara hacia arriba a 0.5 y escala hacia abajo a velocidad normal
+
+            if(leftWall && transform.localScale.x > 0){//cambiamos el scale para que cuando escale un muro izquierdo mire a la izquierda
+                transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);
+            }else if(rightWall && transform.localScale.x < 0){
+                transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);    
+            }
+        }else{
+            rb.gravityScale = 1;
+        }
+
+        if(inWall && !onTheFloor){
+            if(x != 0 && !grab)
+                SlideWall();
+        }
+
         ImproveJump();
-        if(Input.GetKeyDown(KeyCode.Space) && onTheFloor){
-            animator.SetBool("jump", true);
-            Jump();
+        if(Input.GetKeyDown(KeyCode.Space)){
+            if(onTheFloor){
+                animator.SetBool("jump", true);
+                Jump();
+            }
+            
+            if(inWall && !onTheFloor){
+                animator.SetBool("climb", false);
+                animator.SetBool("jump", true);
+                JumpFromWall();
+            }
         }
 
         if(Input.GetKeyDown(KeyCode.X) && !isDash){
@@ -72,6 +126,7 @@ public class PlayerController : MonoBehaviour
         }
 
         if(onTheFloor && !touchFloor){
+            animator.SetBool("climb", false);
             ValidateTouchFloor();
             touchFloor = true;
         }
@@ -96,24 +151,33 @@ public class PlayerController : MonoBehaviour
 
     private void Walk(){
         if(canMove && !isDash){
-            rb.velocity = new Vector2(direction.x * movementSpeed, rb.velocity.y);//añade velocidad de movimiento a la direccion horizontal y mantiene la direccion vertical
+            if(wallJump){
+                rb.velocity = Vector2.Lerp(rb.velocity, 
+                    (new Vector2(direction.x * movementSpeed, rb.velocity.y)), Time.deltaTime / 2);//velocidad obtenida al saltar de muro
+            }else{
+                rb.velocity = new Vector2(direction.x * movementSpeed, rb.velocity.y);//añade velocidad de movimiento a la direccion horizontal y mantiene la direccion vertical
 
-            if(direction != Vector2.zero){//si no esta quieto(!x0y0)
-                animator.SetBool("walk", true);
-                
-                if(direction.x < 0 && transform.localScale.x > 0){//si el jugador se esta desplazando para la izquierda(x < 0) y en la escala indica que esta mirando a la derecha(localScale.x > 0)
-                    transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);//cambiamos la escala de x a valor negativo
-                }else if(direction.x > 0 && transform.localScale.x < 0){
-                    transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);//necesitamos cambiar la escala de x a su valor absoluto
+                if(direction != Vector2.zero && !grab){//si no esta quieto(!x0y0)
+                    animator.SetBool("walk", true);
+                    
+                    if(direction.x < 0 && transform.localScale.x > 0){//si el jugador se esta desplazando para la izquierda(x < 0) y en la escala indica que esta mirando a la derecha(localScale.x > 0)
+                        transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);//cambiamos la escala de x a valor negativo
+                    }else if(direction.x > 0 && transform.localScale.x < 0){
+                        transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);//necesitamos cambiar la escala de x a su valor absoluto
+                    }
+                }else{//si esta quieto animacion walk false
+                    animator.SetBool("walk", false);
                 }
-            }else{//si esta quieto animacion walk false
-                animator.SetBool("walk", false);
-            }
+            }   
         }
     }
 
     private void Jump(){
         rb.velocity += Vector2.up * jumpForce;//incrementa la velocidad del rb sumando (actual Y * jumpForce), no se incrementa nada a X
+    }
+
+    private void Jump(Vector2 jumpDirection, bool wall){
+        rb.velocity += jumpDirection * jumpForce;
     }
 
     private void ImproveJump(){//INVESTIGAR
@@ -127,6 +191,11 @@ public class PlayerController : MonoBehaviour
     private void RestrictJump(){
         //crearemos un collider2d al que le pasaremos(posicion central del player + posicion del suelo, radio de la hitbox, layer sobre la que actuar)
         onTheFloor = Physics2D.OverlapCircle((Vector2)transform.position + floor, radioCollider, layerFloor);
+
+        rightWall = Physics2D.OverlapCircle((Vector2)transform.position + touchRightWall, radioCollider, layerFloor);
+        leftWall = Physics2D.OverlapCircle((Vector2)transform.position + touchLeftWall, radioCollider, layerFloor);
+        //si el jugador esta colisionando con un muro a la derecha o izquierda
+        inWall = rightWall || leftWall;
     }
 
     public void EndJump(){
@@ -192,5 +261,34 @@ public class PlayerController : MonoBehaviour
         yield return new WaitForSeconds(time);
         cinemachineBasicMultiChannelPerlin.m_AmplitudeGain = 0;
         isShake = false;
+    }
+
+    private void SlideWall(){
+        if(canMove)
+            rb.velocity = new Vector2(rb.velocity.x, -slideVelocity);
+    }
+
+    private void JumpFromWall(){
+        StopCoroutine(MovementDisabled(0));
+        StartCoroutine(MovementDisabled(0.1f));
+
+        Vector2 wallDirection = rightWall ? Vector2.left : Vector2.right;
+        if(wallDirection.x < 0 && transform.localScale.x > 0){
+            transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);
+        }else if(wallDirection.x > 0 && transform.localScale.x < 0){
+            transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
+        }
+
+        animator.SetBool("jump", true);
+        animator.SetBool("climb", false);
+        Jump((Vector2.up + wallDirection), true);
+
+        wallJump = true;
+    }
+
+    private IEnumerator MovementDisabled(float time){
+        canMove = false;
+        yield return new WaitForSeconds(time);
+        canMove = true;
     }
 }
